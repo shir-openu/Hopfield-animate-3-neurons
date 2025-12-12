@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>רשת הופפילד - 3 נוירונים</title>
+<style>
+  :root{
+    --bg:#0b1220; --ink:#e5e7eb; --muted:#94a3b8;
+    --panel:#0f172a; --panel-2:#111827; --border:#1f2937; --border-soft:#12213a;
+    --stage-w: 1200px;
+    --teal:#11a8a0; --magenta:#f472b6; --purple:#a78bfa; --green:#22c55e;
+    --blue:#3b82f6; --orange:#f59e0b; --red:#ef4444;
+    --space:#94a3b8;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,"Noto Sans";font-weight:400}
+  header{border-bottom:1px solid var(--border); background:linear-gradient(180deg,#0b1220 0%,#0c1426 100%)}
+  .wrap{max-width:var(--stage-w); margin:0 auto; padding:10px 14px;}
+  .title{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .title h1{font-size:18px;margin:0;font-weight:400}
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .controls button,.controls select,.controls input{
+    font:inherit;padding:6px 10px;border:1px solid var(--border);
+    border-radius:8px;background:#0b1424;color:var(--ink);cursor:pointer;
+    box-shadow:0 0 0 1px var(--border-soft) inset;font-weight:400}
+  .controls button:hover{background:#0e1a2c}
+  .controls button:disabled{opacity:0.5;cursor:not-allowed}
+  .controls button.blink{animation:controlBlink 1.5s ease-in-out 2}
+
+  @keyframes controlBlink{0%,100%{box-shadow:0 0 0 1px var(--border-soft) inset} 50%{box-shadow:0 0 15px var(--purple),0 0 0 2px var(--purple) inset}}
+  .note{color:var(--muted); font-size:13px}
+  main{padding:14px 0;}
+  .grid3{display:grid;grid-template-columns:280px minmax(500px,1fr) 320px; gap:14px;}
+  @media (max-width:1024px){ .grid3{grid-template-columns:1fr} }
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;transition:box-shadow 0.3s ease}
+  .card.flash{animation:cardFlash 1s ease-out}
+  .card.pulse{animation:cardPulse 2s ease-in-out 4}
+  @keyframes cardFlash{0%{box-shadow:0 0 20px var(--purple)} 100%{box-shadow:0 0 0px var(--purple)}}
+  @keyframes cardPulse{0%,100%{box-shadow:0 0 0px var(--green)} 50%{box-shadow:0 0 25px var(--green)}}
+  .card h3{margin:0 0 8px 0;font-size:16px;text-align:center;color:#e2e8f0;font-weight:400}
+
+  .stage-wrap{width:100%;max-width:var(--stage-w);margin:8px auto 0;}
+  .stage{width:100%;height:auto;aspect-ratio:4/3;display:block;
+         background:#0b1220;border:1px solid var(--border);border-radius:10px}
+
+  .node{transition: fill 0.3s ease}
+  .math-text{fill:#e2e8f0;font:400 24px/1.2 system-ui,sans-serif;text-anchor:middle;dominant-baseline:central}
+  .neuron-label{fill:#fff;font:400 28px/1.2 system-ui,sans-serif;text-anchor:middle;dominant-baseline:central}
+  .value-label{fill:var(--orange);font:400 20px/1.2 monospace;text-anchor:middle;dominant-baseline:central}
+  .weight-label{fill:var(--purple);font:italic 400 16px/1.2 'Times New Roman',serif;text-anchor:middle;dominant-baseline:central}
+  .step-label{fill:var(--orange);font:400 20px/1.2 system-ui,sans-serif;text-anchor:middle}
+  .eq-green{fill:var(--green);font-weight:400;animation:blink 3s ease-in-out 3}
+  @keyframes blink{0%,100%{opacity:1} 50%{opacity:0.3}}
+
+  .edge{stroke:var(--purple);stroke-width:3;fill:none;opacity:0.5}
+  .edge-positive{stroke:var(--purple)}
+  .edge-negative{stroke:var(--red)}
+  .edge-zero{stroke:#4b5563}
+  .edge-highlight{opacity:1;stroke-width:5}
+
+  .influence-arrow{stroke-width:4;fill:none}
+  @keyframes arrowDraw{0%{stroke-dashoffset:200} 100%{stroke-dashoffset:0}}
+  @keyframes arrowPulse{0%{opacity:0.3} 50%{opacity:1} 100%{opacity:0.3}}
+
+  /* Pattern/State buttons */
+  .btn-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+  .btn-grid button{padding:6px 4px;border:1px solid var(--border);border-radius:6px;
+    background:#0b1424;color:var(--ink);cursor:pointer;font-size:12px;font-family:monospace;transition:all 0.2s;font-weight:400;direction:ltr}
+  .btn-grid button:hover{border-color:var(--purple);background:#0e1a2c}
+  .btn-grid button.selected{border-color:var(--green);background:rgba(34,197,94,0.2)}
+  .btn-grid button.stored{color:var(--green)}
+
+  /* Matrix table */
+  .matrix-table{margin:8px auto;border-collapse:collapse;font-size:14px;direction:ltr}
+  .matrix-table td{padding:4px 8px;text-align:center;border:1px solid var(--border)}
+  .matrix-table .header{color:var(--purple);font-style:italic;background:rgba(167,139,250,0.1)}
+  .matrix-table .row-header{color:var(--teal);font-style:italic;background:rgba(17,168,160,0.1)}
+  .matrix-table .zero{color:#666}
+  .matrix-table .positive{color:var(--green)}
+  .matrix-table .negative{color:var(--red)}
+
+  /* Calculation panel */
+  .calc{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif !important;color:#e5e7eb}
+  .calc .sec{border:1px dashed var(--border); border-radius:10px; padding:10px; background:#0c1526; margin-top:10px}
+  .calc .sec.highlight{border-color:var(--green);box-shadow:0 0 10px rgba(34,197,94,0.3)}
+  .calc .sec.active{border-color:var(--orange);box-shadow:0 0 10px rgba(245,158,11,0.3);background:#0f1a2a}
+  .calc .sec.dim{opacity:0.4}
+  .calc .head{font-weight:400; margin-bottom:6px; color:#cbd5e1;font-size:14px}
+  .calc .eq{font-size:16px; line-height:1.6;font-family:'Times New Roman',serif !important;direction:ltr;text-align:center}
+  .calc .eq-small{font-size:14px; line-height:1.5}
+  .hl-teal{color:var(--teal); font-weight:400}
+  .hl-magenta{color:var(--magenta); font-weight:400}
+  .hl-blue{color:var(--blue); font-weight:400}
+  .hl-purple{color:var(--purple); font-weight:400}
+  .hl-green{color:var(--green); font-weight:400}
+  .hl-orange{color:var(--orange); font-weight:400}
+  .hl-red{color:var(--red); font-weight:400}
+
+  .status-box{text-align:center;padding:10px;border-radius:8px;margin:10px 0;font-size:14px}
+  .status-box.running{background:rgba(245,158,11,0.1);border:1px solid var(--orange);color:var(--orange)}
+  .status-box.converged{background:rgba(34,197,94,0.1);border:1px solid var(--green);color:var(--green)}
+
+  .energy-box{text-align:center;padding:10px;background:rgba(34,197,94,0.1);border:1px solid var(--green);border-radius:10px;margin:10px 0}
+  .energy-box .label{font-size:13px;color:var(--ink);opacity:0.8}
+  .energy-box .value{font-size:20px;color:var(--green);font-family:'Times New Roman',serif}
+
+  .iteration-badge{display:inline-block;background:var(--purple);color:white;padding:2px 8px;border-radius:10px;font-size:12px;margin-bottom:5px}
+
+  /* Footer */
+  .site-footer{
+    position:fixed;
+    bottom:10px;
+    left:10px;
+    font-size:11px;
+    color:var(--muted);
+    opacity:0.7;
+  }
+
+  /* Popup */
+  .popup-overlay{
+    position:fixed;
+    top:0;left:0;right:0;bottom:0;
+    background:rgba(0,0,0,0.7);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+  }
+  .popup-overlay.show{display:flex}
+  .popup{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:24px;
+    max-width:600px;
+    max-height:80vh;
+    overflow-y:auto;
+    position:relative;
+    direction:rtl;
+  }
+  .popup h2{margin:0 0 16px 0;font-size:20px;font-weight:400;color:var(--ink);text-align:center}
+  .popup-close{
+    position:absolute;
+    top:12px;
+    left:12px;
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-size:24px;
+    cursor:pointer;
+    padding:4px 8px;
+  }
+  .popup-close:hover{color:var(--ink)}
+  .formula-box{
+    background:#0c1526;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px;
+    margin:12px 0;
+  }
+  .formula-box .formula-title{
+    font-size:14px;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  .formula-box .formula{
+    font-size:18px;
+    font-family:'Times New Roman',serif;
+    color:var(--ink);
+    text-align:center;
+    direction:ltr;
+    line-height:1.8;
+  }
+  .formula sub{font-size:0.7em}
+  .formula .sum{font-size:24px}
+  .formula .hl-purple{color:var(--purple)}
+  .formula .hl-teal{color:var(--teal)}
+  .formula .hl-green{color:var(--green)}
+  .formula .hl-orange{color:var(--orange)}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap title">
+    <h1>רשת הופפילד - 3 נוירונים</h1>
+    <div class="controls">
+      <button id="prevBtn">הקודם</button>
+      <button id="playBtn">הפעל</button>
+      <button id="pauseBtn" style="display:none">עצור</button>
+      <button id="nextBtn">הבא</button>
+      <button id="resetBtn">איפוס</button>
+      <button id="formulasBtn" style="background:rgba(167,139,250,0.2);border-color:var(--purple)">נוסחאות</button>
+      <span id="stepText" class="note">שלב 0</span>
+      <div style="margin-right:20px">
+        <label class="note">מהירות</label>
+        <input id="speed" type="number" step="0.1" min="0.5" max="3" value="1" style="width:60px">
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="grid3">
+    <!-- Left Panel: Settings -->
+    <aside class="card">
+      <h3>הגדרות הרשת</h3>
+
+      <div style="margin-bottom:15px">
+        <div class="note" style="text-align:center;margin-bottom:6px">דפוסים לאחסון (A,B,C):</div>
+        <div class="btn-grid" id="patternBtns">
+          <button data-pattern="1,1,1">(+,+,+)</button>
+          <button data-pattern="1,1,-1">(+,+,-)</button>
+          <button data-pattern="1,-1,1">(+,-,+)</button>
+          <button data-pattern="1,-1,-1">(+,-,-)</button>
+          <button data-pattern="-1,1,1">(-,+,+)</button>
+          <button data-pattern="-1,1,-1">(-,+,-)</button>
+          <button data-pattern="-1,-1,1">(-,-,+)</button>
+          <button data-pattern="-1,-1,-1">(-,-,-)</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:15px">
+        <div class="note" style="text-align:center;margin-bottom:6px">מצב התחלתי:</div>
+        <div class="btn-grid" id="stateBtns">
+          <button data-state="1,1,1">(+,+,+)</button>
+          <button data-state="1,1,-1">(+,+,-)</button>
+          <button data-state="1,-1,1">(+,-,+)</button>
+          <button data-state="1,-1,-1">(+,-,-)</button>
+          <button data-state="-1,1,1">(-,+,+)</button>
+          <button data-state="-1,1,-1">(-,+,-)</button>
+          <button data-state="-1,-1,1">(-,-,+)</button>
+          <button data-state="-1,-1,-1">(-,-,-)</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="note" style="text-align:center;margin-bottom:6px">מטריצת משקלים J:</div>
+        <table class="matrix-table">
+          <tr>
+            <td class="header">J</td>
+            <td class="header">A</td>
+            <td class="header">B</td>
+            <td class="header">C</td>
+          </tr>
+          <tr>
+            <td class="row-header">A</td>
+            <td class="zero">0</td>
+            <td id="j-ab">0</td>
+            <td id="j-ac">0</td>
+          </tr>
+          <tr>
+            <td class="row-header">B</td>
+            <td id="j-ba">0</td>
+            <td class="zero">0</td>
+            <td id="j-bc">0</td>
+          </tr>
+          <tr>
+            <td class="row-header">C</td>
+            <td id="j-ca">0</td>
+            <td id="j-cb">0</td>
+            <td class="zero">0</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="status-box running" id="statusBox">
+        בחרו דפוס ומצב התחלתי
+      </div>
+
+      <div class="energy-box">
+        <div class="label">אנרגיה E:</div>
+        <div class="value" id="energyValue">E = 0</div>
+      </div>
+    </aside>
+
+    <!-- Center: Animation -->
+    <section class="card">
+      <h3>אנימציה</h3>
+
+      <div class="stage-wrap">
+        <svg id="svg" class="stage" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <marker id="mTeal" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 Q3.5,5 0,0Z" fill="#11a8a0"/></marker>
+            <marker id="mMagenta" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 Q3.5,5 0,0Z" fill="#f472b6"/></marker>
+            <marker id="mBlue" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 Q3.5,5 0,0Z" fill="#3b82f6"/></marker>
+            <marker id="mOrange" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 Q3.5,5 0,0Z" fill="#f59e0b"/></marker>
+            <marker id="mGreen" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 Q3.5,5 0,0Z" fill="#22c55e"/></marker>
+          </defs>
+
+          <g id="gEdges"></g>
+          <g id="gInfluence"></g>
+          <g id="gNodes"></g>
+          <g id="gLabels"></g>
+          <g id="gStatus"></g>
+        </svg>
+      </div>
+
+      <div class="wrap" style="padding:0;max-width:none;margin-top:10px">
+        <input id="slider" type="range" min="0" max="10" value="0" step="1" style="width:min(100%,600px);accent-color:#2563eb">
+      </div>
+    </section>
+
+    <!-- Right Panel: Calculations -->
+    <aside class="card" id="calcCard">
+      <h3>חישובים</h3>
+      <div class="calc">
+        <div class="sec" id="secState">
+          <div class="head">מצב נוכחי:</div>
+          <div class="eq" id="eqState">(A, B, C) = (+1, +1, +1)</div>
+        </div>
+
+        <div class="sec" id="secHA">
+          <div class="head">שלב: חישוב h<sub style="color:var(--teal)">A</sub></div>
+          <div class="eq eq-small" id="eqHA">h<sub>A</sub> = J<sub>AB</sub>·B + J<sub>AC</sub>·C</div>
+          <div class="eq" id="eqHACalc"></div>
+          <div class="eq" id="eqHAResult"></div>
+        </div>
+
+        <div class="sec" id="secHB">
+          <div class="head">שלב: חישוב h<sub style="color:var(--magenta)">B</sub></div>
+          <div class="eq eq-small" id="eqHB">h<sub>B</sub> = J<sub>AB</sub>·A + J<sub>BC</sub>·C</div>
+          <div class="eq" id="eqHBCalc"></div>
+          <div class="eq" id="eqHBResult"></div>
+        </div>
+
+        <div class="sec" id="secHC">
+          <div class="head">שלב: חישוב h<sub style="color:var(--blue)">C</sub></div>
+          <div class="eq eq-small" id="eqHC">h<sub>C</sub> = J<sub>AC</sub>·A + J<sub>BC</sub>·B</div>
+          <div class="eq" id="eqHCCalc"></div>
+          <div class="eq" id="eqHCResult"></div>
+        </div>
+
+        <div class="sec" id="secConclusion">
+          <div class="head">כלל ההכרעה:</div>
+          <div class="eq eq-small" id="eqDecisionRule">s<sub>i</sub>(t+1) = sign(h<sub>i</sub>)</div>
+          <div class="eq" id="eqDecisionCalc"></div>
+          <div class="eq" id="eqConclusion">-</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- Formulas Popup -->
+<div class="popup-overlay" id="popupOverlay">
+  <div class="popup">
+    <button class="popup-close" id="popupClose">×</button>
+    <h2>נוסחאות רשת הופפילד</h2>
+
+    <div class="formula-box">
+      <div class="formula-title">1. נוסחת המשקלים (Hebbian Learning):</div>
+      <div class="formula">
+        <span class="hl-purple">J<sub>ij</sub></span> =
+        <span style="font-size:14px">1</span>/<span style="font-size:14px">N</span>
+        <span class="sum">Σ</span><sup style="font-size:12px">P</sup><sub style="font-size:12px">μ=1</sub>
+        p<sub>i</sub><sup>μ</sup> · p<sub>j</sub><sup>μ</sup>
+        &nbsp;&nbsp; (i ≠ j)
+      </div>
+      <div class="formula" style="font-size:14px;margin-top:8px;color:var(--muted)">
+        J<sub>ii</sub> = 0 &nbsp; (אין חיבור עצמי)
+      </div>
+    </div>
+
+    <div class="formula-box">
+      <div class="formula-title">2. השדה המקומי:</div>
+      <div class="formula">
+        <span class="hl-teal">h<sub>i</sub></span> =
+        <span class="sum">Σ</span><sub style="font-size:12px">j≠i</sub>
+        J<sub>ij</sub> · s<sub>j</sub>
+      </div>
+    </div>
+
+    <div class="formula-box">
+      <div class="formula-title">3. כלל ההכרעה (עדכון אסינכרוני):</div>
+      <div class="formula">
+        <span class="hl-orange">s<sub>i</sub>(t+1)</span> = sign(h<sub>i</sub>) =
+        <span style="font-size:16px">
+        { <span class="hl-green">+1</span> &nbsp; if h<sub>i</sub> ≥ 0<br>
+        &nbsp;&nbsp;{ <span class="hl-orange">−1</span> &nbsp; if h<sub>i</sub> &lt; 0
+        </span>
+      </div>
+    </div>
+
+    <div class="formula-box">
+      <div class="formula-title">4. פונקציית האנרגיה:</div>
+      <div class="formula">
+        <span class="hl-green">E</span> = −<span style="font-size:14px">1</span>/<span style="font-size:14px">2</span>
+        <span class="sum">Σ</span><sub style="font-size:12px">i</sub>
+        <span class="sum">Σ</span><sub style="font-size:12px">j≠i</sub>
+        J<sub>ij</sub> · s<sub>i</sub> · s<sub>j</sub>
+      </div>
+      <div class="formula" style="font-size:14px;margin-top:8px;color:var(--muted)">
+        (עבור 3 נוירונים: E = −(J<sub>AB</sub>·A·B + J<sub>AC</sub>·A·C + J<sub>BC</sub>·B·C))
+      </div>
+    </div>
+
+    <div class="formula-box">
+      <div class="formula-title">5. תכונות:</div>
+      <div class="formula" style="font-size:14px;text-align:right;direction:rtl">
+        • האנרגיה תמיד יורדת או נשארת קבועה<br>
+        • הרשת מתכנסת לנקודת שבת (מינימום מקומי)<br>
+        • הדפוסים המאוחסנים הם אטרקטורים
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer" dir="ltr">
+  © The Open University of Israel | Developed by Shir Sivroni
+</footer>
+
+<script>
+/* ========= מצב ========= */
+let storedPatterns = [];
+let weights = { ab: 0, ac: 0, bc: 0 };
+let initialState = null;
+let playing = false;
+let timer = null;
+const N = 3;
+
+// מבנה השלבים המפורט
+let detailedSteps = [];
+let currentStep = 0;
+let maxSteps = 0;
+
+/* ========= DOM ========= */
+const gEdges = document.getElementById('gEdges');
+const gInfluence = document.getElementById('gInfluence');
+const gNodes = document.getElementById('gNodes');
+const gLabels = document.getElementById('gLabels');
+const gStatus = document.getElementById('gStatus');
+
+const slider = document.getElementById('slider');
+const stepText = document.getElementById('stepText');
+const playBtn = document.getElementById('playBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const resetBtn = document.getElementById('resetBtn');
+const speedInput = document.getElementById('speed');
+const statusBox = document.getElementById('statusBox');
+const calcCard = document.getElementById('calcCard');
+
+const patternBtns = document.querySelectorAll('#patternBtns button');
+const stateBtns = document.querySelectorAll('#stateBtns button');
+
+/* ========= מיקומי נוירונים ========= */
+const neurons = {
+  a: { x: 200, y: 450, color: '#11a8a0', name: 'A' },
+  b: { x: 600, y: 450, color: '#f472b6', name: 'B' },
+  c: { x: 400, y: 150, color: '#3b82f6', name: 'C' }
+};
+
+/* ========= חישובים ========= */
+function calculateWeights() {
+  if (storedPatterns.length === 0) {
+    weights = { ab: 0, ac: 0, bc: 0 };
+    return;
+  }
+  let sumAB = 0, sumAC = 0, sumBC = 0;
+  for (const p of storedPatterns) {
+    sumAB += p.a * p.b;
+    sumAC += p.a * p.c;
+    sumBC += p.b * p.c;
+  }
+  weights.ab = sumAB / N;
+  weights.ac = sumAC / N;
+  weights.bc = sumBC / N;
+}
+
+function calcEnergy(state) {
+  return -(weights.ab * state.a * state.b +
+           weights.ac * state.a * state.c +
+           weights.bc * state.b * state.c);
+}
+
+function calcLocalField(neuron, state) {
+  if (neuron === 'a') return weights.ab * state.b + weights.ac * state.c;
+  if (neuron === 'b') return weights.ab * state.a + weights.bc * state.c;
+  return weights.ac * state.a + weights.bc * state.b;
+}
+
+function formatNum(n) {
+  if (typeof n !== 'number' || isNaN(n)) return '0';
+  const f = n.toFixed(2);
+  return (n >= 0 ? '+' : '') + f;
+}
+
+function formatSign(n) {
+  return n >= 0 ? '+1' : '-1';
+}
+
+/* ========= בניית שלבים מפורטים ========= */
+function buildDetailedSteps() {
+  detailedSteps = [];
+
+  // אם אין מצב התחלתי, רק שלב ריק
+  if (!initialState) {
+    detailedSteps.push({
+      type: 'no_initial',
+      iteration: 0,
+      state: null,
+      energy: 0,
+      description: 'בחרו מצב התחלתי'
+    });
+    maxSteps = 0;
+    slider.max = 0;
+    return;
+  }
+
+  let state = { ...initialState };
+  let iteration = 0;
+  const maxIterations = 10;
+
+  // שלב 0: מצב התחלתי
+  detailedSteps.push({
+    type: 'initial',
+    iteration: 0,
+    state: { ...state },
+    energy: calcEnergy(state),
+    description: 'מצב התחלתי'
+  });
+
+  while (iteration < maxIterations) {
+    iteration++;
+    let anyChanged = false;
+
+    // עבור כל נוירון: חישוב ואז החלטה
+    for (const neuron of ['a', 'b', 'c']) {
+      const h = calcLocalField(neuron, state);
+      const oldVal = state[neuron];
+      const newVal = h >= 0 ? 1 : -1;
+      const willChange = newVal !== oldVal;
+
+      // שלב חישוב השדה המקומי
+      detailedSteps.push({
+        type: 'compute_h',
+        iteration: iteration,
+        neuron: neuron,
+        state: { ...state },
+        h: h,
+        oldVal: oldVal,
+        newVal: newVal,
+        willChange: willChange,
+        energy: calcEnergy(state),
+        description: `חישוב השדה המקומי h_${neurons[neuron].name}`
+      });
+
+      // שלב ההחלטה/עדכון
+      if (willChange) {
+        state[neuron] = newVal;
+        anyChanged = true;
+
+        detailedSteps.push({
+          type: 'update',
+          iteration: iteration,
+          neuron: neuron,
+          state: { ...state },
+          h: h,
+          oldVal: oldVal,
+          newVal: newVal,
+          willChange: true,
+          energy: calcEnergy(state),
+          description: `${neurons[neuron].name} משתנה מ-${formatSign(oldVal)} ל-${formatSign(newVal)}`
+        });
+      } else {
+        detailedSteps.push({
+          type: 'no_change',
+          iteration: iteration,
+          neuron: neuron,
+          state: { ...state },
+          h: h,
+          oldVal: oldVal,
+          newVal: newVal,
+          willChange: false,
+          energy: calcEnergy(state),
+          description: `${neurons[neuron].name} נשאר ${formatSign(oldVal)} (ללא שינוי)`
+        });
+      }
+    }
+
+    // בדיקת התכנסות - אחרי שעברנו על כל הנוירונים באיטרציה
+    if (!anyChanged) {
+      detailedSteps.push({
+        type: 'converged',
+        iteration: iteration,
+        state: { ...state },
+        energy: calcEnergy(state),
+        description: 'התכנסות - המצב יציב'
+      });
+      break;
+    }
+  }
+
+  maxSteps = detailedSteps.length - 1;
+  slider.max = maxSteps;
+}
+
+/* ========= רינדור SVG ========= */
+function renderSVG() {
+  const stepData = detailedSteps[currentStep];
+  if (!stepData) return;
+
+  const state = stepData.state;
+  const activeNeuron = stepData.neuron;
+  const stepType = stepData.type;
+
+  // Clear
+  gEdges.innerHTML = '';
+  gInfluence.innerHTML = '';
+  gNodes.innerHTML = '';
+  gLabels.innerHTML = '';
+  gStatus.innerHTML = '';
+
+  // Draw edges
+  const edges = [
+    { from: 'a', to: 'b', w: weights.ab },
+    { from: 'a', to: 'c', w: weights.ac },
+    { from: 'b', to: 'c', w: weights.bc }
+  ];
+
+  edges.forEach(e => {
+    const n1 = neurons[e.from], n2 = neurons[e.to];
+    const isRelevant = activeNeuron && (e.from === activeNeuron || e.to === activeNeuron);
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', n1.x);
+    line.setAttribute('y1', n1.y);
+    line.setAttribute('x2', n2.x);
+    line.setAttribute('y2', n2.y);
+
+    let edgeClass = 'edge ';
+    edgeClass += e.w > 0 ? 'edge-positive' : e.w < 0 ? 'edge-negative' : 'edge-zero';
+    if (isRelevant && stepType === 'compute_h') edgeClass += ' edge-highlight';
+
+    line.setAttribute('class', edgeClass);
+    line.setAttribute('stroke-width', Math.max(2, Math.abs(e.w) * 5));
+    gEdges.appendChild(line);
+
+    // Weight label
+    const mx = (n1.x + n2.x) / 2;
+    const my = (n1.y + n2.y) / 2;
+    const offset = e.from === 'a' && e.to === 'b' ? 30 : -30;
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', mx + (e.from === 'a' && e.to === 'c' ? -50 : e.from === 'b' ? 50 : 0));
+    text.setAttribute('y', my + offset);
+    text.setAttribute('class', 'weight-label');
+    text.textContent = `J = ${formatNum(e.w)}`;
+    gLabels.appendChild(text);
+  });
+
+  // Draw influence arrows during compute_h
+  if (stepType === 'compute_h' && activeNeuron) {
+    const target = neurons[activeNeuron];
+    const otherNeurons = ['a', 'b', 'c'].filter(n => n !== activeNeuron);
+
+    otherNeurons.forEach((n, idx) => {
+      const source = neurons[n];
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const len = Math.sqrt(dx*dx + dy*dy);
+      const ux = dx / len, uy = dy / len;
+
+      const startX = source.x + ux * 55;
+      const startY = source.y + uy * 55;
+      const endX = target.x - ux * 65;
+      const endY = target.y - uy * 65;
+
+      const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      arrow.setAttribute('x1', startX);
+      arrow.setAttribute('y1', startY);
+      arrow.setAttribute('x2', endX);
+      arrow.setAttribute('y2', endY);
+      arrow.setAttribute('stroke', '#f59e0b');
+      arrow.setAttribute('stroke-width', '4');
+      arrow.setAttribute('marker-end', 'url(#mOrange)');
+
+      // Animate
+      const arrowLen = Math.sqrt((endX-startX)**2 + (endY-startY)**2);
+      arrow.setAttribute('stroke-dasharray', arrowLen);
+      arrow.setAttribute('stroke-dashoffset', arrowLen);
+      arrow.style.animation = `arrowDraw 0.5s ease-out ${idx * 0.2}s forwards`;
+
+      gInfluence.appendChild(arrow);
+    });
+  }
+
+  // Draw neurons
+  ['a', 'b', 'c'].forEach(n => {
+    const neuron = neurons[n];
+    const val = state ? state[n] : null;
+    const isActive = activeNeuron === n;
+    const isUpdating = stepType === 'update' && isActive;
+
+    // Glow for active neuron
+    if (isActive && (stepType === 'compute_h' || stepType === 'update' || stepType === 'no_change')) {
+      const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      glow.setAttribute('cx', neuron.x);
+      glow.setAttribute('cy', neuron.y);
+      glow.setAttribute('r', 60);
+      glow.setAttribute('fill', 'none');
+      glow.setAttribute('stroke', isUpdating ? '#22c55e' : '#f59e0b');
+      glow.setAttribute('stroke-width', '3');
+      glow.setAttribute('opacity', '0.6');
+      gNodes.appendChild(glow);
+    }
+
+    // Main circle
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', neuron.x);
+    circle.setAttribute('cy', neuron.y);
+    circle.setAttribute('r', 45);
+    // אם אין מצב התחלתי, העיגול אפור
+    circle.setAttribute('fill', val === null ? '#374151' : (val > 0 ? neuron.color : '#374151'));
+    circle.setAttribute('stroke', neuron.color);
+    circle.setAttribute('stroke-width', '3');
+    gNodes.appendChild(circle);
+
+    // Neuron name
+    const nameText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    nameText.setAttribute('x', neuron.x);
+    nameText.setAttribute('y', neuron.y);
+    nameText.setAttribute('class', 'neuron-label');
+    nameText.textContent = neuron.name;
+    gLabels.appendChild(nameText);
+
+    // Value below - only show if state exists
+    if (val !== null) {
+      const valText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      valText.setAttribute('x', neuron.x);
+      valText.setAttribute('y', neuron.y + 70);
+      valText.setAttribute('class', 'value-label');
+      valText.textContent = formatSign(val);
+      gLabels.appendChild(valText);
+    }
+  });
+
+  // Status text in SVG
+  const statusText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  statusText.setAttribute('x', 400);
+  statusText.setAttribute('y', 560);
+  statusText.setAttribute('class', stepType === 'converged' ? 'math-text eq-green' : 'step-label');
+  statusText.textContent = stepData.description;
+  gStatus.appendChild(statusText);
+
+  // Iteration badge
+  if (stepData.iteration > 0) {
+    const iterText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    iterText.setAttribute('x', 400);
+    iterText.setAttribute('y', 30);
+    iterText.setAttribute('class', 'step-label');
+    iterText.setAttribute('fill', '#a78bfa');
+    iterText.textContent = `איטרציה ${stepData.iteration}`;
+    gStatus.appendChild(iterText);
+  }
+}
+
+/* ========= עדכון פאנל חישובים ========= */
+function updateCalcPanel() {
+  const stepData = detailedSteps[currentStep];
+  if (!stepData) return;
+
+  const state = stepData.state;
+  const activeNeuron = stepData.neuron;
+  const stepType = stepData.type;
+
+  // Reset all sections
+  ['secHA', 'secHB', 'secHC'].forEach(id => {
+    document.getElementById(id).className = 'sec dim';
+  });
+  document.getElementById('secConclusion').className = 'sec dim';
+
+  // Handle no initial state
+  if (stepType === 'no_initial' || !state) {
+    document.getElementById('eqState').innerHTML = `<span style="direction:ltr;display:inline-block">(<span class="hl-teal">A</span>, <span class="hl-magenta">B</span>, <span class="hl-blue">C</span>) = (<span style="color:var(--muted)">?</span>, <span style="color:var(--muted)">?</span>, <span style="color:var(--muted)">?</span>)</span>`;
+    document.getElementById('eqDecisionCalc').innerHTML = '';
+    document.getElementById('eqConclusion').innerHTML = 'בחרו מצב התחלתי';
+    document.getElementById('energyValue').textContent = 'E = ?';
+    return;
+  }
+
+  // Current state - display in LTR order for math notation
+  document.getElementById('eqState').innerHTML = `<span style="direction:ltr;display:inline-block">(<span class="hl-teal">A</span>, <span class="hl-magenta">B</span>, <span class="hl-blue">C</span>) = (<span class="hl-teal">${formatSign(state.a)}</span>, <span class="hl-magenta">${formatSign(state.b)}</span>, <span class="hl-blue">${formatSign(state.c)}</span>)</span>`;
+
+  // Helper to update h section - uses stepData if provided, otherwise calculates from state
+  function updateHSection(neuron, secId, eqCalcId, eqResultId, stepDataOverride = null) {
+    const sec = document.getElementById(secId);
+
+    // Use stepData values if provided (for accurate display during animation)
+    let h, currentVal, newVal, willChange, stateForCalc;
+
+    if (stepDataOverride && stepDataOverride.neuron === neuron) {
+      h = stepDataOverride.h;
+      currentVal = stepDataOverride.oldVal;
+      newVal = stepDataOverride.newVal;
+      willChange = stepDataOverride.willChange;
+      stateForCalc = stepDataOverride.state;
+      // For compute_h step, use state before update
+      if (stepDataOverride.type === 'compute_h') {
+        stateForCalc = stepDataOverride.state;
+      }
+    } else {
+      h = calcLocalField(neuron, state);
+      currentVal = state[neuron];
+      newVal = h >= 0 ? 1 : -1;
+      willChange = newVal !== currentVal;
+      stateForCalc = state;
+    }
+
+    const colorClass = neuron === 'a' ? 'hl-teal' : neuron === 'b' ? 'hl-magenta' : 'hl-blue';
+    const neuronName = neurons[neuron].name;
+
+    // Build calculation string - use the state at the time of calculation
+    let calcStr = '';
+    let resultStr = '';
+
+    if (neuron === 'a') {
+      calcStr = `= (${formatNum(weights.ab)})·(${formatSign(stateForCalc.b)}) + (${formatNum(weights.ac)})·(${formatSign(stateForCalc.c)})`;
+      resultStr = `= <span class="${colorClass}">${formatNum(h)}</span> → sign = <span class="${colorClass}">${formatSign(newVal)}</span>`;
+    } else if (neuron === 'b') {
+      calcStr = `= (${formatNum(weights.ab)})·(${formatSign(stateForCalc.a)}) + (${formatNum(weights.bc)})·(${formatSign(stateForCalc.c)})`;
+      resultStr = `= <span class="${colorClass}">${formatNum(h)}</span> → sign = <span class="${colorClass}">${formatSign(newVal)}</span>`;
+    } else {
+      calcStr = `= (${formatNum(weights.ac)})·(${formatSign(stateForCalc.a)}) + (${formatNum(weights.bc)})·(${formatSign(stateForCalc.b)})`;
+      resultStr = `= <span class="${colorClass}">${formatNum(h)}</span> → sign = <span class="${colorClass}">${formatSign(newVal)}</span>`;
+    }
+
+    if (willChange) {
+      resultStr += ` <span class="hl-orange">(ישתנה)</span>`;
+    } else {
+      resultStr += ` <span class="hl-green">(ללא שינוי)</span>`;
+    }
+
+    document.getElementById(eqCalcId).innerHTML = calcStr;
+    document.getElementById(eqResultId).innerHTML = resultStr;
+
+    return { h, willChange, newVal };
+  }
+
+  // Update based on step type
+  const eqDecisionCalc = document.getElementById('eqDecisionCalc');
+
+  if (stepType === 'initial') {
+    document.getElementById('secState').className = 'sec active';
+    eqDecisionCalc.innerHTML = '';
+    document.getElementById('eqConclusion').innerHTML = 'מצב התחלתי - לחצו "הבא" להתחיל';
+
+  } else if (stepType === 'compute_h' || stepType === 'update' || stepType === 'no_change') {
+    const secId = activeNeuron === 'a' ? 'secHA' : activeNeuron === 'b' ? 'secHB' : 'secHC';
+    const eqCalcId = activeNeuron === 'a' ? 'eqHACalc' : activeNeuron === 'b' ? 'eqHBCalc' : 'eqHCCalc';
+    const eqResultId = activeNeuron === 'a' ? 'eqHAResult' : activeNeuron === 'b' ? 'eqHBResult' : 'eqHCResult';
+
+    // Pass stepData to get accurate willChange value
+    const hResult = updateHSection(activeNeuron, secId, eqCalcId, eqResultId, stepData);
+    document.getElementById(secId).className = 'sec active';
+
+    const neuronName = neurons[activeNeuron].name;
+    const colorClass = activeNeuron === 'a' ? 'hl-teal' : activeNeuron === 'b' ? 'hl-magenta' : 'hl-blue';
+    const h = stepData.h;
+    const newVal = stepData.newVal;
+    const oldVal = stepData.oldVal;
+
+    // הצגת חישוב ההכרעה
+    const signCondition = h >= 0 ? `${formatNum(h)} ≥ 0` : `${formatNum(h)} < 0`;
+    eqDecisionCalc.innerHTML = `s<sub><span class="${colorClass}">${neuronName}</span></sub> = sign(${formatNum(h)}) = <span class="${colorClass}">${formatSign(newVal)}</span>  (כי ${signCondition})`;
+
+    if (stepType === 'update') {
+      document.getElementById('secConclusion').className = 'sec highlight';
+      document.getElementById('eqConclusion').innerHTML = `<span class="hl-orange">${neuronName}: ${formatSign(oldVal)} → ${formatSign(newVal)}</span> <span class="hl-green">(שינוי)</span>`;
+    } else if (stepType === 'no_change') {
+      document.getElementById('secConclusion').className = 'sec';
+      document.getElementById('eqConclusion').innerHTML = `<span class="${colorClass}">${neuronName}: ${formatSign(oldVal)} → ${formatSign(newVal)}</span> (ללא שינוי)`;
+    } else {
+      document.getElementById('eqConclusion').innerHTML = `בודקים את ${neuronName}...`;
+    }
+
+  } else if (stepType === 'converged') {
+    // Show all h calculations
+    updateHSection('a', 'secHA', 'eqHACalc', 'eqHAResult');
+    updateHSection('b', 'secHB', 'eqHBCalc', 'eqHBResult');
+    updateHSection('c', 'secHC', 'eqHCCalc', 'eqHCResult');
+
+    ['secHA', 'secHB', 'secHC'].forEach(id => {
+      document.getElementById(id).className = 'sec';
+    });
+
+    eqDecisionCalc.innerHTML = 'כל הנוירונים יציבים';
+    document.getElementById('secConclusion').className = 'sec highlight';
+    document.getElementById('eqConclusion').innerHTML = `<span class="hl-green">✓ התכנסות - המצב יציב</span>`;
+
+    calcCard.classList.remove('pulse');
+    setTimeout(() => calcCard.classList.add('pulse'), 50);
+  }
+
+  // Energy
+  document.getElementById('energyValue').textContent = `E = ${formatNum(stepData.energy)}`;
+}
+
+/* ========= עדכון מטריצה ========= */
+function updateMatrixDisplay() {
+  const cells = {
+    'j-ab': weights.ab, 'j-ba': weights.ab,
+    'j-ac': weights.ac, 'j-ca': weights.ac,
+    'j-bc': weights.bc, 'j-cb': weights.bc
+  };
+
+  Object.entries(cells).forEach(([id, val]) => {
+    const cell = document.getElementById(id);
+    cell.textContent = formatNum(val);
+    cell.className = val > 0 ? 'positive' : val < 0 ? 'negative' : '';
+  });
+}
+
+/* ========= עדכון UI ========= */
+function updateUI() {
+  slider.value = currentStep;
+  stepText.textContent = `שלב ${currentStep} מתוך ${maxSteps}`;
+  prevBtn.disabled = currentStep === 0;
+  nextBtn.disabled = currentStep >= maxSteps;
+
+  const stepData = detailedSteps[currentStep];
+  if (stepData?.type === 'converged') {
+    statusBox.className = 'status-box converged';
+    statusBox.textContent = '✓ התכנסות';
+  } else {
+    statusBox.className = 'status-box running';
+    statusBox.textContent = stepData?.description || 'בחרו דפוס ומצב התחלתי';
+  }
+
+  // Mark stored patterns
+  stateBtns.forEach(btn => {
+    const [a, b, c] = btn.dataset.state.split(',').map(Number);
+    const isStored = storedPatterns.some(p => p.a === a && p.b === b && p.c === c);
+    btn.classList.toggle('stored', isStored);
+  });
+}
+
+function renderAll() {
+  renderSVG();
+  updateCalcPanel();
+  updateUI();
+}
+
+/* ========= שליטה ========= */
+function play() {
+  if (playing) return;
+  playing = true;
+  playBtn.style.display = 'none';
+  pauseBtn.style.display = 'inline-block';
+
+  const speed = Math.max(0.5, Math.min(3, parseFloat(speedInput.value) || 1));
+  timer = setInterval(() => {
+    if (currentStep < maxSteps) {
+      currentStep++;
+      renderAll();
+    } else {
+      pause();
+    }
+  }, 1200 / speed);
+}
+
+function pause() {
+  playing = false;
+  playBtn.style.display = 'inline-block';
+  pauseBtn.style.display = 'none';
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
+}
+
+/* ========= אירועים ========= */
+patternBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const [a, b, c] = btn.dataset.pattern.split(',').map(Number);
+    const pattern = { a, b, c };
+
+    const idx = storedPatterns.findIndex(p => p.a === a && p.b === b && p.c === c);
+    if (idx >= 0) {
+      storedPatterns.splice(idx, 1);
+      btn.classList.remove('selected');
+    } else {
+      storedPatterns.push(pattern);
+      btn.classList.add('selected');
+    }
+
+    calculateWeights();
+    updateMatrixDisplay();
+    buildDetailedSteps();
+    currentStep = 0;
+    slider.value = 0;
+    renderAll();
+  });
+});
+
+stateBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    pause();
+    const [a, b, c] = btn.dataset.state.split(',').map(Number);
+
+    // Toggle behavior - לחיצה שניה מבטלת
+    if (initialState && initialState.a === a && initialState.b === b && initialState.c === c) {
+      initialState = null;
+      btn.classList.remove('selected');
+    } else {
+      initialState = { a, b, c };
+      stateBtns.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    }
+
+    buildDetailedSteps();
+    currentStep = 0;
+    slider.value = 0;
+    renderAll();
+  });
+});
+
+prevBtn.addEventListener('click', () => {
+  pause();
+  if (currentStep > 0) {
+    currentStep--;
+    renderAll();
+  }
+});
+
+nextBtn.addEventListener('click', () => {
+  pause();
+  if (currentStep < maxSteps) {
+    currentStep++;
+    renderAll();
+  }
+});
+
+resetBtn.addEventListener('click', () => {
+  pause();
+  currentStep = 0;
+  renderAll();
+});
+
+slider.addEventListener('input', e => {
+  pause();
+  currentStep = parseInt(e.target.value, 10) || 0;
+  renderAll();
+});
+
+playBtn.addEventListener('click', play);
+pauseBtn.addEventListener('click', pause);
+
+/* ========= Popup נוסחאות ========= */
+const popupOverlay = document.getElementById('popupOverlay');
+const formulasBtn = document.getElementById('formulasBtn');
+const popupClose = document.getElementById('popupClose');
+
+formulasBtn.addEventListener('click', () => {
+  popupOverlay.classList.add('show');
+});
+
+popupClose.addEventListener('click', () => {
+  popupOverlay.classList.remove('show');
+});
+
+popupOverlay.addEventListener('click', (e) => {
+  if (e.target === popupOverlay) {
+    popupOverlay.classList.remove('show');
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    popupOverlay.classList.remove('show');
+  }
+});
+
+/* ========= אתחול ========= */
+buildDetailedSteps();
+renderAll();
+
+setTimeout(() => {
+  playBtn.classList.add('blink');
+  setTimeout(() => playBtn.classList.remove('blink'), 3000);
+}, 500);
+</script>
+</body>
+</html>
