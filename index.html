@@ -531,31 +531,45 @@ function buildDetailedSteps() {
     iteration++;
     let anyChanged = false;
 
-    // עבור כל נוירון: חישוב ואז החלטה
-    for (const neuron of ['a', 'b', 'c']) {
-      const h = calcLocalField(neuron, state);
-      const oldVal = state[neuron];
-      const newVal = h >= 0 ? 1 : -1;
-      const willChange = newVal !== oldVal;
+    // שלב 1: חישוב כל השדות המקומיים לפי המצב הנוכחי (לפני עדכונים)
+    const oldState = { ...state };
+    const localFields = {};
+    const newValues = {};
+    const willChangeFlags = {};
 
-      // שלב חישוב השדה המקומי
+    for (const neuron of ['a', 'b', 'c']) {
+      localFields[neuron] = calcLocalField(neuron, oldState); // חישוב לפי המצב הישן!
+      newValues[neuron] = localFields[neuron] >= 0 ? 1 : -1;
+      willChangeFlags[neuron] = newValues[neuron] !== oldState[neuron];
+    }
+
+    // שלב 2: הצגת החישובים והעדכונים (כולם לפי המצב הישן)
+    for (const neuron of ['a', 'b', 'c']) {
+      const h = localFields[neuron];
+      const oldVal = oldState[neuron];
+      const newVal = newValues[neuron];
+      const willChange = willChangeFlags[neuron];
+
+      // שלב חישוב השדה המקומי - מציג את המצב לפני עדכונים
       detailedSteps.push({
         type: 'compute_h',
         iteration: iteration,
         neuron: neuron,
-        state: { ...state },
+        state: { ...oldState }, // המצב לפני כל עדכון באיטרציה זו
         h: h,
         oldVal: oldVal,
         newVal: newVal,
         willChange: willChange,
-        energy: calcEnergy(state),
+        energy: calcEnergy(oldState),
         description: `חישוב השדה המקומי h_${neurons[neuron].name}`
       });
 
       // שלב ההחלטה/עדכון
       if (willChange) {
-        state[neuron] = newVal;
         anyChanged = true;
+
+        // עדכון המצב החדש
+        state[neuron] = newVal;
 
         detailedSteps.push({
           type: 'update',
@@ -800,12 +814,10 @@ function updateCalcPanel() {
       currentVal = stepDataOverride.oldVal;
       newVal = stepDataOverride.newVal;
       willChange = stepDataOverride.willChange;
+      // תמיד להשתמש במצב ששמור ב-stepData - זה כבר המצב הנכון לחישוב
       stateForCalc = stepDataOverride.state;
-      // For compute_h step, use state before update
-      if (stepDataOverride.type === 'compute_h') {
-        stateForCalc = stepDataOverride.state;
-      }
     } else {
+      // אם אין stepData ספציפי, חשב מחדש לפי המצב הנוכחי
       h = calcLocalField(neuron, state);
       currentVal = state[neuron];
       newVal = h >= 0 ? 1 : -1;
