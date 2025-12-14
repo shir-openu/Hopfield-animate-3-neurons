@@ -531,44 +531,33 @@ function buildDetailedSteps() {
     iteration++;
     let anyChanged = false;
 
-    // שלב 1: חישוב כל השדות המקומיים לפי המצב הנוכחי (לפני עדכונים)
-    const oldState = { ...state };
-    const localFields = {};
-    const newValues = {};
-    const willChangeFlags = {};
-
+    // עדכון א-סינכרוני: כל נוירון מחשב לפי המצב הנוכחי ומתעדכן מיד
     for (const neuron of ['a', 'b', 'c']) {
-      localFields[neuron] = calcLocalField(neuron, oldState); // חישוב לפי המצב הישן!
-      newValues[neuron] = localFields[neuron] >= 0 ? 1 : -1;
-      willChangeFlags[neuron] = newValues[neuron] !== oldState[neuron];
-    }
+      // חישוב השדה המקומי לפי המצב הנוכחי (כולל עדכונים קודמים באיטרציה זו)
+      const h = calcLocalField(neuron, state);
+      const oldVal = state[neuron];
+      const newVal = h >= 0 ? 1 : -1;
+      const willChange = newVal !== oldVal;
 
-    // שלב 2: הצגת החישובים והעדכונים (כולם לפי המצב הישן)
-    for (const neuron of ['a', 'b', 'c']) {
-      const h = localFields[neuron];
-      const oldVal = oldState[neuron];
-      const newVal = newValues[neuron];
-      const willChange = willChangeFlags[neuron];
-
-      // שלב חישוב השדה המקומי - מציג את המצב לפני עדכונים
+      // שלב חישוב השדה המקומי
       detailedSteps.push({
         type: 'compute_h',
         iteration: iteration,
         neuron: neuron,
-        state: { ...oldState }, // המצב לפני כל עדכון באיטרציה זו
+        state: { ...state }, // המצב הנוכחי (כולל עדכונים קודמים)
         h: h,
         oldVal: oldVal,
         newVal: newVal,
         willChange: willChange,
-        energy: calcEnergy(oldState),
+        energy: calcEnergy(state),
         description: `חישוב השדה המקומי h_${neurons[neuron].name}`
       });
 
-      // שלב ההחלטה/עדכון
+      // שלב ההחלטה/עדכון - מתבצע מיד
       if (willChange) {
         anyChanged = true;
 
-        // עדכון המצב החדש
+        // עדכון המצב מיד (א-סינכרוני)
         state[neuron] = newVal;
 
         detailedSteps.push({
@@ -814,7 +803,7 @@ function updateCalcPanel() {
       currentVal = stepDataOverride.oldVal;
       newVal = stepDataOverride.newVal;
       willChange = stepDataOverride.willChange;
-      // תמיד להשתמש במצב ששמור ב-stepData - זה כבר המצב הנכון לחישוב
+      // עדכון א-סינכרוני: המצב כולל עדכונים קודמים באותה איטרציה
       stateForCalc = stepDataOverride.state;
     } else {
       // אם אין stepData ספציפי, חשב מחדש לפי המצב הנוכחי
