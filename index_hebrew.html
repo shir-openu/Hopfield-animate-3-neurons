@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Hopfield Network - 3 Neurons</title>
+<title>רשת הופפילד - 3 נוירונים</title>
 <style>
   :root{
     --bg:#0b1220; --ink:#e5e7eb; --muted:#94a3b8;
@@ -111,7 +111,7 @@
   .site-footer{
     position:fixed;
     bottom:10px;
-    right:10px;
+    left:10px;
     font-size:11px;
     color:var(--muted);
     opacity:0.7;
@@ -137,13 +137,13 @@
     max-height:80vh;
     overflow-y:auto;
     position:relative;
-    direction:ltr;
+    direction:rtl;
   }
   .popup h2{margin:0 0 16px 0;font-size:20px;font-weight:400;color:var(--ink);text-align:center}
   .popup-close{
     position:absolute;
     top:12px;
-    right:12px;
+    left:12px;
     background:none;
     border:none;
     color:var(--muted);
@@ -183,17 +183,17 @@
 <body>
 <header>
   <div class="wrap title">
-    <h1>Hopfield Network - 3 Neurons</h1>
+    <h1>רשת הופפילד - 3 נוירונים</h1>
     <div class="controls">
-      <button id="prevBtn">Previous</button>
-      <button id="playBtn">Play</button>
-      <button id="pauseBtn" style="display:none">Pause</button>
-      <button id="nextBtn">Next</button>
-      <button id="resetBtn">Reset</button>
-      <button id="formulasBtn" style="background:rgba(167,139,250,0.2);border-color:var(--purple)">Formulas</button>
-      <span id="stepText" class="note">Step 0</span>
-      <div style="margin-left:20px">
-        <label class="note">Speed</label>
+      <button id="prevBtn">הקודם</button>
+      <button id="playBtn">הפעל</button>
+      <button id="pauseBtn" style="display:none">עצור</button>
+      <button id="nextBtn">הבא</button>
+      <button id="resetBtn">איפוס</button>
+      <button id="formulasBtn" style="background:rgba(167,139,250,0.2);border-color:var(--purple)">נוסחאות</button>
+      <span id="stepText" class="note">שלב 0</span>
+      <div style="margin-right:20px">
+        <label class="note">מהירות</label>
         <input id="speed" type="number" step="0.1" min="0.5" max="3" value="1" style="width:60px">
       </div>
     </div>
@@ -204,10 +204,10 @@
   <div class="grid3">
     <!-- Left Panel: Settings -->
     <aside class="card">
-      <h3>Network Settings</h3>
+      <h3>הגדרות הרשת</h3>
 
       <div style="margin-bottom:15px">
-        <div class="note" style="text-align:center;margin-bottom:6px">Patterns to store (A,B,C):</div>
+        <div class="note" style="text-align:center;margin-bottom:6px">דפוסים לאחסון (A,B,C):</div>
         <div class="btn-grid" id="patternBtns">
           <button data-pattern="1,1,1">(+,+,+)</button>
           <button data-pattern="1,1,-1">(+,+,-)</button>
@@ -221,7 +221,7 @@
       </div>
 
       <div style="margin-bottom:15px">
-        <div class="note" style="text-align:center;margin-bottom:6px">Initial state:</div>
+        <div class="note" style="text-align:center;margin-bottom:6px">מצב התחלתי:</div>
         <div class="btn-grid" id="stateBtns">
           <button data-state="1,1,1">(+,+,+)</button>
           <button data-state="1,1,-1">(+,+,-)</button>
@@ -235,7 +235,7 @@
       </div>
 
       <div>
-        <div class="note" style="text-align:center;margin-bottom:6px">Weight matrix J:</div>
+        <div class="note" style="text-align:center;margin-bottom:6px">מטריצת משקלים J:</div>
         <table class="matrix-table">
           <tr>
             <td class="header">J</td>
@@ -265,18 +265,18 @@
       </div>
 
       <div class="status-box running" id="statusBox">
-        Select a pattern and initial state
+        בחרו דפוס ומצב התחלתי
       </div>
 
       <div class="energy-box">
-        <div class="label">Energy E:</div>
+        <div class="label">אנרגיה E:</div>
         <div class="value" id="energyValue">E = 0</div>
       </div>
     </aside>
 
     <!-- Center: Animation -->
     <section class="card">
-      <h3>Animation</h3>
+      <h3>אנימציה</h3>
 
       <div class="stage-wrap">
         <svg id="svg" class="stage" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
@@ -308,36 +308,36 @@
 
     <!-- Right Panel: Calculations -->
     <aside class="card" id="calcCard">
-      <h3>Calculations</h3>
+      <h3>חישובים</h3>
       <div class="calc">
         <div class="sec" id="secState">
-          <div class="head">Current state:</div>
+          <div class="head">מצב נוכחי:</div>
           <div class="eq" id="eqState">(A, B, C) = (+1, +1, +1)</div>
         </div>
 
         <div class="sec" id="secHA">
-          <div class="head">Step: Calculate h<sub style="color:var(--teal)">A</sub></div>
+          <div class="head">שלב: חישוב h<sub style="color:var(--teal)">A</sub></div>
           <div class="eq eq-small" id="eqHA">h<sub>A</sub> = J<sub>AB</sub>·B + J<sub>AC</sub>·C</div>
           <div class="eq" id="eqHACalc"></div>
           <div class="eq" id="eqHAResult"></div>
         </div>
 
         <div class="sec" id="secHB">
-          <div class="head">Step: Calculate h<sub style="color:var(--magenta)">B</sub></div>
+          <div class="head">שלב: חישוב h<sub style="color:var(--magenta)">B</sub></div>
           <div class="eq eq-small" id="eqHB">h<sub>B</sub> = J<sub>AB</sub>·A + J<sub>BC</sub>·C</div>
           <div class="eq" id="eqHBCalc"></div>
           <div class="eq" id="eqHBResult"></div>
         </div>
 
         <div class="sec" id="secHC">
-          <div class="head">Step: Calculate h<sub style="color:var(--blue)">C</sub></div>
+          <div class="head">שלב: חישוב h<sub style="color:var(--blue)">C</sub></div>
           <div class="eq eq-small" id="eqHC">h<sub>C</sub> = J<sub>AC</sub>·A + J<sub>BC</sub>·B</div>
           <div class="eq" id="eqHCCalc"></div>
           <div class="eq" id="eqHCResult"></div>
         </div>
 
         <div class="sec" id="secConclusion">
-          <div class="head">Decision rule:</div>
+          <div class="head">כלל ההכרעה:</div>
           <div class="eq eq-small" id="eqDecisionRule">s<sub>i</sub>(t+1) = sign(h<sub>i</sub>)</div>
           <div class="eq" id="eqDecisionCalc"></div>
           <div class="eq" id="eqConclusion">-</div>
@@ -351,10 +351,10 @@
 <div class="popup-overlay" id="popupOverlay">
   <div class="popup">
     <button class="popup-close" id="popupClose">×</button>
-    <h2>Hopfield Network Formulas</h2>
+    <h2>נוסחאות רשת הופפילד</h2>
 
     <div class="formula-box">
-      <div class="formula-title">1. Weight formula (Hebbian Learning):</div>
+      <div class="formula-title">1. נוסחת המשקלים (Hebbian Learning):</div>
       <div class="formula">
         <span class="hl-purple">J<sub>ij</sub></span> =
         <span style="font-size:14px">1</span>/<span style="font-size:14px">N</span>
@@ -363,12 +363,12 @@
         &nbsp;&nbsp; (i ≠ j)
       </div>
       <div class="formula" style="font-size:14px;margin-top:8px;color:var(--muted)">
-        J<sub>ii</sub> = 0 &nbsp; (no self-connection)
+        J<sub>ii</sub> = 0 &nbsp; (אין חיבור עצמי)
       </div>
     </div>
 
     <div class="formula-box">
-      <div class="formula-title">2. Local field:</div>
+      <div class="formula-title">2. השדה המקומי:</div>
       <div class="formula">
         <span class="hl-teal">h<sub>i</sub></span> =
         <span class="sum">Σ</span><sub style="font-size:12px">j≠i</sub>
@@ -377,7 +377,7 @@
     </div>
 
     <div class="formula-box">
-      <div class="formula-title">3. Decision rule (asynchronous update):</div>
+      <div class="formula-title">3. כלל ההכרעה (עדכון אסינכרוני):</div>
       <div class="formula">
         <span class="hl-orange">s<sub>i</sub>(t+1)</span> = sign(h<sub>i</sub>) =
         <span style="font-size:16px">
@@ -388,7 +388,7 @@
     </div>
 
     <div class="formula-box">
-      <div class="formula-title">4. Energy function:</div>
+      <div class="formula-title">4. פונקציית האנרגיה:</div>
       <div class="formula">
         <span class="hl-green">E</span> = −<span style="font-size:14px">1</span>/<span style="font-size:14px">2</span>
         <span class="sum">Σ</span><sub style="font-size:12px">i</sub>
@@ -396,27 +396,27 @@
         J<sub>ij</sub> · s<sub>i</sub> · s<sub>j</sub>
       </div>
       <div class="formula" style="font-size:14px;margin-top:8px;color:var(--muted)">
-        (For 3 neurons: E = −(J<sub>AB</sub>·s<sub>A</sub>·s<sub>B</sub> + J<sub>AC</sub>·s<sub>A</sub>·s<sub>C</sub> + J<sub>BC</sub>·s<sub>B</sub>·s<sub>C</sub>))
+        (עבור 3 נוירונים: E = −(J<sub>AB</sub>·s<sub>A</sub>·s<sub>B</sub> + J<sub>AC</sub>·s<sub>A</sub>·s<sub>C</sub> + J<sub>BC</sub>·s<sub>B</sub>·s<sub>C</sub>))
       </div>
     </div>
 
     <div class="formula-box">
-      <div class="formula-title">5. Properties:</div>
-      <div class="formula" style="font-size:14px;text-align:left;direction:ltr">
-        &bull; Energy always decreases or stays constant<br>
-        &bull; The network converges to a fixed point (local minimum)<br>
-        &bull; Stored patterns are attractors
+      <div class="formula-title">5. תכונות:</div>
+      <div class="formula" style="font-size:14px;text-align:right;direction:rtl">
+        • האנרגיה תמיד יורדת או נשארת קבועה<br>
+        • הרשת מתכנסת לנקודת שבת (מינימום מקומי)<br>
+        • הדפוסים המאוחסנים הם אטרקטורים
       </div>
     </div>
   </div>
 </div>
 
 <footer class="site-footer" dir="ltr">
-  © Developed by Shir Sivroni | All rights reserved
+  © The Open University of Israel | Developed by Shir Sivroni
 </footer>
 
 <script>
-/* ========= State ========= */
+/* ========= מצב ========= */
 let storedPatterns = [];
 let weights = { ab: 0, ac: 0, bc: 0 };
 let initialState = null;
@@ -424,7 +424,7 @@ let playing = false;
 let timer = null;
 const N = 3;
 
-// Detailed steps structure
+// מבנה השלבים המפורט
 let detailedSteps = [];
 let currentStep = 0;
 let maxSteps = 0;
@@ -450,14 +450,14 @@ const calcCard = document.getElementById('calcCard');
 const patternBtns = document.querySelectorAll('#patternBtns button');
 const stateBtns = document.querySelectorAll('#stateBtns button');
 
-/* ========= Neuron positions ========= */
+/* ========= מיקומי נוירונים ========= */
 const neurons = {
   a: { x: 200, y: 450, color: '#11a8a0', name: 'A' },
   b: { x: 600, y: 450, color: '#f472b6', name: 'B' },
   c: { x: 400, y: 150, color: '#3b82f6', name: 'C' }
 };
 
-/* ========= Calculations ========= */
+/* ========= חישובים ========= */
 function calculateWeights() {
   if (storedPatterns.length === 0) {
     weights = { ab: 0, ac: 0, bc: 0 };
@@ -496,18 +496,18 @@ function formatSign(n) {
   return n >= 0 ? '+1' : '-1';
 }
 
-/* ========= Build detailed steps ========= */
+/* ========= בניית שלבים מפורטים ========= */
 function buildDetailedSteps() {
   detailedSteps = [];
 
-  // If no initial state, just empty step
+  // אם אין מצב התחלתי, רק שלב ריק
   if (!initialState) {
     detailedSteps.push({
       type: 'no_initial',
       iteration: 0,
       state: null,
       energy: 0,
-      description: 'Select an initial state'
+      description: 'בחרו מצב התחלתי'
     });
     maxSteps = 0;
     slider.max = 0;
@@ -518,46 +518,46 @@ function buildDetailedSteps() {
   let iteration = 0;
   const maxIterations = 10;
 
-  // Step 0: Initial state
+  // שלב 0: מצב התחלתי
   detailedSteps.push({
     type: 'initial',
     iteration: 0,
     state: { ...state },
     energy: calcEnergy(state),
-    description: 'Initial state'
+    description: 'מצב התחלתי'
   });
 
   while (iteration < maxIterations) {
     iteration++;
     let anyChanged = false;
 
-    // Asynchronous update: each neuron computes from current state and updates immediately
+    // עדכון א-סינכרוני: כל נוירון מחשב לפי המצב הנוכחי ומתעדכן מיד
     for (const neuron of ['a', 'b', 'c']) {
-      // Calculate local field from current state (including previous updates in this iteration)
+      // חישוב השדה המקומי לפי המצב הנוכחי (כולל עדכונים קודמים באיטרציה זו)
       const h = calcLocalField(neuron, state);
       const oldVal = state[neuron];
       const newVal = h >= 0 ? 1 : -1;
       const willChange = newVal !== oldVal;
 
-      // Local field calculation step
+      // שלב חישוב השדה המקומי
       detailedSteps.push({
         type: 'compute_h',
         iteration: iteration,
         neuron: neuron,
-        state: { ...state }, // current state (including previous updates)
+        state: { ...state }, // המצב הנוכחי (כולל עדכונים קודמים)
         h: h,
         oldVal: oldVal,
         newVal: newVal,
         willChange: willChange,
         energy: calcEnergy(state),
-        description: `Calculate local field h_${neurons[neuron].name}`
+        description: `חישוב השדה המקומי h_${neurons[neuron].name}`
       });
 
-      // Decision/update step - executed immediately
+      // שלב ההחלטה/עדכון - מתבצע מיד
       if (willChange) {
         anyChanged = true;
 
-        // Update state immediately (asynchronous)
+        // עדכון המצב מיד (א-סינכרוני)
         state[neuron] = newVal;
 
         detailedSteps.push({
@@ -570,7 +570,7 @@ function buildDetailedSteps() {
           newVal: newVal,
           willChange: true,
           energy: calcEnergy(state),
-          description: `${neurons[neuron].name} changes from ${formatSign(oldVal)} to ${formatSign(newVal)}`
+          description: `${neurons[neuron].name} משתנה מ-${formatSign(oldVal)} ל-${formatSign(newVal)}`
         });
       } else {
         detailedSteps.push({
@@ -583,19 +583,19 @@ function buildDetailedSteps() {
           newVal: newVal,
           willChange: false,
           energy: calcEnergy(state),
-          description: `${neurons[neuron].name} stays ${formatSign(oldVal)} (no change)`
+          description: `${neurons[neuron].name} נשאר ${formatSign(oldVal)} (ללא שינוי)`
         });
       }
     }
 
-    // Convergence check - after going through all neurons in iteration
+    // בדיקת התכנסות - אחרי שעברנו על כל הנוירונים באיטרציה
     if (!anyChanged) {
       detailedSteps.push({
         type: 'converged',
         iteration: iteration,
         state: { ...state },
         energy: calcEnergy(state),
-        description: 'Converged - state is stable'
+        description: 'התכנסות - המצב יציב'
       });
       break;
     }
@@ -605,7 +605,7 @@ function buildDetailedSteps() {
   slider.max = maxSteps;
 }
 
-/* ========= Render SVG ========= */
+/* ========= רינדור SVG ========= */
 function renderSVG() {
   const stepData = detailedSteps[currentStep];
   if (!stepData) return;
@@ -719,7 +719,7 @@ function renderSVG() {
     circle.setAttribute('cx', neuron.x);
     circle.setAttribute('cy', neuron.y);
     circle.setAttribute('r', 45);
-    // If no initial state, circle is gray
+    // אם אין מצב התחלתי, העיגול אפור
     circle.setAttribute('fill', val === null ? '#374151' : (val > 0 ? neuron.color : '#374151'));
     circle.setAttribute('stroke', neuron.color);
     circle.setAttribute('stroke-width', '3');
@@ -759,12 +759,12 @@ function renderSVG() {
     iterText.setAttribute('y', 30);
     iterText.setAttribute('class', 'step-label');
     iterText.setAttribute('fill', '#a78bfa');
-    iterText.textContent = `Iteration ${stepData.iteration}`;
+    iterText.textContent = `איטרציה ${stepData.iteration}`;
     gStatus.appendChild(iterText);
   }
 }
 
-/* ========= Update calculations panel ========= */
+/* ========= עדכון פאנל חישובים ========= */
 function updateCalcPanel() {
   const stepData = detailedSteps[currentStep];
   if (!stepData) return;
@@ -783,7 +783,7 @@ function updateCalcPanel() {
   if (stepType === 'no_initial' || !state) {
     document.getElementById('eqState').innerHTML = `<span style="direction:ltr;display:inline-block">(<span class="hl-teal">A</span>, <span class="hl-magenta">B</span>, <span class="hl-blue">C</span>) = (<span style="color:var(--muted)">?</span>, <span style="color:var(--muted)">?</span>, <span style="color:var(--muted)">?</span>)</span>`;
     document.getElementById('eqDecisionCalc').innerHTML = '';
-    document.getElementById('eqConclusion').innerHTML = 'Select an initial state';
+    document.getElementById('eqConclusion').innerHTML = 'בחרו מצב התחלתי';
     document.getElementById('energyValue').textContent = 'E = ?';
     return;
   }
@@ -803,10 +803,10 @@ function updateCalcPanel() {
       currentVal = stepDataOverride.oldVal;
       newVal = stepDataOverride.newVal;
       willChange = stepDataOverride.willChange;
-      // Asynchronous update: state includes previous updates from same iteration
+      // עדכון א-סינכרוני: המצב כולל עדכונים קודמים באותה איטרציה
       stateForCalc = stepDataOverride.state;
     } else {
-      // If no specific stepData, recalculate from current state
+      // אם אין stepData ספציפי, חשב מחדש לפי המצב הנוכחי
       h = calcLocalField(neuron, state);
       currentVal = state[neuron];
       newVal = h >= 0 ? 1 : -1;
@@ -833,9 +833,9 @@ function updateCalcPanel() {
     }
 
     if (willChange) {
-      resultStr += ` <span class="hl-orange">(will change)</span>`;
+      resultStr += ` <span class="hl-orange">(ישתנה)</span>`;
     } else {
-      resultStr += ` <span class="hl-green">(no change)</span>`;
+      resultStr += ` <span class="hl-green">(ללא שינוי)</span>`;
     }
 
     document.getElementById(eqCalcId).innerHTML = calcStr;
@@ -850,7 +850,7 @@ function updateCalcPanel() {
   if (stepType === 'initial') {
     document.getElementById('secState').className = 'sec active';
     eqDecisionCalc.innerHTML = '';
-    document.getElementById('eqConclusion').innerHTML = 'Initial state - press "Next" to start';
+    document.getElementById('eqConclusion').innerHTML = 'מצב התחלתי - לחצו "הבא" להתחיל';
 
   } else if (stepType === 'compute_h' || stepType === 'update' || stepType === 'no_change') {
     const secId = activeNeuron === 'a' ? 'secHA' : activeNeuron === 'b' ? 'secHB' : 'secHC';
@@ -867,18 +867,18 @@ function updateCalcPanel() {
     const newVal = stepData.newVal;
     const oldVal = stepData.oldVal;
 
-    // Display decision calculation
+    // הצגת חישוב ההכרעה
     const signCondition = h >= 0 ? `${formatNum(h)} ≥ 0` : `${formatNum(h)} < 0`;
-    eqDecisionCalc.innerHTML = `s<sub><span class="${colorClass}">${neuronName}</span></sub> = sign(${formatNum(h)}) = <span class="${colorClass}">${formatSign(newVal)}</span>  (since ${signCondition})`;
+    eqDecisionCalc.innerHTML = `s<sub><span class="${colorClass}">${neuronName}</span></sub> = sign(${formatNum(h)}) = <span class="${colorClass}">${formatSign(newVal)}</span>  (כי ${signCondition})`;
 
     if (stepType === 'update') {
       document.getElementById('secConclusion').className = 'sec highlight';
-      document.getElementById('eqConclusion').innerHTML = `<span class="hl-orange">${neuronName}: ${formatSign(oldVal)} → ${formatSign(newVal)}</span> <span class="hl-green">(changed)</span>`;
+      document.getElementById('eqConclusion').innerHTML = `<span class="hl-orange">${neuronName}: ${formatSign(oldVal)} → ${formatSign(newVal)}</span> <span class="hl-green">(שינוי)</span>`;
     } else if (stepType === 'no_change') {
       document.getElementById('secConclusion').className = 'sec';
-      document.getElementById('eqConclusion').innerHTML = `<span class="${colorClass}">${neuronName}: ${formatSign(oldVal)} → ${formatSign(newVal)}</span> (no change)`;
+      document.getElementById('eqConclusion').innerHTML = `<span class="${colorClass}">${neuronName}: ${formatSign(oldVal)} → ${formatSign(newVal)}</span> (ללא שינוי)`;
     } else {
-      document.getElementById('eqConclusion').innerHTML = `Checking ${neuronName}...`;
+      document.getElementById('eqConclusion').innerHTML = `בודקים את ${neuronName}...`;
     }
 
   } else if (stepType === 'converged') {
@@ -891,9 +891,9 @@ function updateCalcPanel() {
       document.getElementById(id).className = 'sec';
     });
 
-    eqDecisionCalc.innerHTML = 'All neurons are stable';
+    eqDecisionCalc.innerHTML = 'כל הנוירונים יציבים';
     document.getElementById('secConclusion').className = 'sec highlight';
-    document.getElementById('eqConclusion').innerHTML = `<span class="hl-green">Converged - state is stable</span>`;
+    document.getElementById('eqConclusion').innerHTML = `<span class="hl-green">✓ התכנסות - המצב יציב</span>`;
 
     calcCard.classList.remove('pulse');
     setTimeout(() => calcCard.classList.add('pulse'), 50);
@@ -903,7 +903,7 @@ function updateCalcPanel() {
   document.getElementById('energyValue').textContent = `E = ${formatNum(stepData.energy)}`;
 }
 
-/* ========= Update matrix ========= */
+/* ========= עדכון מטריצה ========= */
 function updateMatrixDisplay() {
   const cells = {
     'j-ab': weights.ab, 'j-ba': weights.ab,
@@ -918,20 +918,20 @@ function updateMatrixDisplay() {
   });
 }
 
-/* ========= Update UI ========= */
+/* ========= עדכון UI ========= */
 function updateUI() {
   slider.value = currentStep;
-  stepText.textContent = `Step ${currentStep} of ${maxSteps}`;
+  stepText.textContent = `שלב ${currentStep} מתוך ${maxSteps}`;
   prevBtn.disabled = currentStep === 0;
   nextBtn.disabled = currentStep >= maxSteps;
 
   const stepData = detailedSteps[currentStep];
   if (stepData?.type === 'converged') {
     statusBox.className = 'status-box converged';
-    statusBox.textContent = 'Converged';
+    statusBox.textContent = '✓ התכנסות';
   } else {
     statusBox.className = 'status-box running';
-    statusBox.textContent = stepData?.description || 'Select a pattern and initial state';
+    statusBox.textContent = stepData?.description || 'בחרו דפוס ומצב התחלתי';
   }
 
   // Mark stored patterns
@@ -948,7 +948,7 @@ function renderAll() {
   updateUI();
 }
 
-/* ========= Controls ========= */
+/* ========= שליטה ========= */
 function play() {
   if (playing) return;
   playing = true;
@@ -976,7 +976,7 @@ function pause() {
   }
 }
 
-/* ========= Events ========= */
+/* ========= אירועים ========= */
 patternBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     const [a, b, c] = btn.dataset.pattern.split(',').map(Number);
@@ -1005,7 +1005,7 @@ stateBtns.forEach(btn => {
     pause();
     const [a, b, c] = btn.dataset.state.split(',').map(Number);
 
-    // Toggle behavior - second click deselects
+    // Toggle behavior - לחיצה שניה מבטלת
     if (initialState && initialState.a === a && initialState.b === b && initialState.c === c) {
       initialState = null;
       btn.classList.remove('selected');
@@ -1053,7 +1053,7 @@ slider.addEventListener('input', e => {
 playBtn.addEventListener('click', play);
 pauseBtn.addEventListener('click', pause);
 
-/* ========= Formulas Popup ========= */
+/* ========= Popup נוסחאות ========= */
 const popupOverlay = document.getElementById('popupOverlay');
 const formulasBtn = document.getElementById('formulasBtn');
 const popupClose = document.getElementById('popupClose');
@@ -1078,7 +1078,7 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-/* ========= Initialize ========= */
+/* ========= אתחול ========= */
 buildDetailedSteps();
 renderAll();
 
